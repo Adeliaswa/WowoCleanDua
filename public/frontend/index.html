@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WowoClean Container Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background: linear-gradient(180deg, #fff7fa 0%, #fdfaf6 100%);
+      color: #5f5560;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 32px auto 50px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      color: #6f5b66;
+      font-size: 34px;
+      font-weight: 700;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #6e5a65;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    p {
+      margin-top: 0;
+      color: #8b7b85;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #6d5d66;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .hero-text {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid #f4dfe8;
+      padding: 22px 24px;
+      border-radius: 22px;
+      box-shadow: 0 10px 30px rgba(210, 178, 191, 0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero-text p {
+      margin-bottom: 0;
+      font-size: 14px;
+    }
+
+    .total-box {
+      background: linear-gradient(135deg, #a8c8a1, #8fb488);
+      color: #ffffff;
+      padding: 16px 22px;
+      border-radius: 18px;
+      font-weight: 600;
+      min-width: 220px;
+      box-shadow: 0 10px 24px rgba(143, 180, 136, 0.24);
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    .total-box small {
+      display: block;
+      font-size: 12px;
+      opacity: 0.9;
+      margin-bottom: 4px;
+      font-weight: 400;
+    }
+
+    .total-box span {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid #f3e3ea;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(217, 191, 201, 0.12);
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid #ecd5df;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    input, select {
+      background: #fffdfd;
+      color: #5f5560;
+    }
+
+    input::placeholder {
+      color: #b29aa5;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #e8a9c0;
+      box-shadow: 0 0 0 4px rgba(245, 199, 219, 0.28);
+      background: #ffffff;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #a9c89f, #8fb485);
+      color: white;
+      box-shadow: 0 10px 20px rgba(143, 180, 133, 0.18);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px rgba(143, 180, 133, 0.26);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #ffe29a, #f6c96f);
+      color: #6b5200;
+      box-shadow: 0 8px 18px rgba(246, 201, 111, 0.2);
+    }
+
+    .btn-warning:hover {
+      transform: translateY(-1px);
+      filter: brightness(0.98);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ef8e99, #df6474);
+      color: white;
+      box-shadow: 0 8px 18px rgba(223, 100, 116, 0.2);
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-1px);
+      filter: brightness(0.98);
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, #f7c9da, #efb1c8);
+      color: #6d5260;
+      box-shadow: 0 8px 18px rgba(239, 177, 200, 0.18);
+    }
+
+    .btn-info:hover {
+      transform: translateY(-1px);
+      filter: brightness(0.99);
+    }
+
+    .btn-soft {
+      background: #f7eef2;
+      color: #7a6771;
+      border: 1px solid #ecd6df;
+    }
+
+    .btn-soft:hover {
+      background: #f4e7ed;
+    }
+
+    .error {
+      color: #dc6a7b;
+      font-size: 12px;
+      margin-top: 6px;
+      min-height: 18px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .section-title {
+      margin: 28px 0 16px;
+      color: #6d5863;
+      font-size: 21px;
+      font-weight: 700;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 22px;
+    }
+
+    .item-card {
+      background: linear-gradient(180deg, #fffefe 0%, #fff9fb 100%);
+      border: 1px solid #f2dde6;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 12px 24px rgba(218, 191, 201, 0.12);
+      transition: all 0.2s ease;
+    }
+
+    .item-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 28px rgba(218, 191, 201, 0.18);
+    }
+
+    .item-card h3 {
+      margin-top: 0;
+      margin-bottom: 14px;
+      color: #4e434a;
+      font-size: 28px;
+      letter-spacing: 0.2px;
+    }
+
+    .item-card p {
+      margin: 8px 0;
+      color: #5f5560;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-active {
+      background: #d9edd3;
+      color: #456a43;
+    }
+
+    .badge-archived {
+      background: #f6d9de;
+      color: #944e5b;
+    }
+
+    .logs {
+      background: #fff1f6;
+      border: 1px solid #f6dce6;
+      padding: 12px;
+      margin-top: 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      color: #6d5f66;
+    }
+
+    .logs strong {
+      color: #7a5c6b;
+    }
+
+    .logs ul {
+      padding-left: 18px;
+      margin-bottom: 0;
+    }
+
+    .logs li {
+      margin-bottom: 8px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .full-width-button {
+      margin-top: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: stretch;
+      }
+
+      .total-box {
+        width: 100%;
+      }
+
+      .card-actions {
+        flex-direction: column;
+      }
+
+      .item-card h3 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="hero-text">
+        <h1>WowoClean Container Tracker</h1>
+        <p>Waste container monitoring dashboard with a soft pastel look.</p>
+      </div>
+
+      <div class="total-box">
+        <small>Total Muatan</small>
+        <span id="totalWeight">0</span> kg
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Tambah Kontainer</h2>
+      <form id="containerForm">
+        <div class="form-grid">
+          <div>
+            <label>Container ID</label>
+            <input type="text" id="container_id" placeholder="Contoh: WH12345" />
+            <div class="error" id="error_container_id"></div>
+          </div>
+
+          <div>
+            <label>Waste Type</label>
+            <select id="waste_type">
+              <option value="">Pilih Waste Type</option>
+              <option value="Chemical">Chemical</option>
+              <option value="Plastic">Plastic</option>
+              <option value="Metal">Metal</option>
+              <option value="Organic">Organic</option>
+            </select>
+            <div class="error" id="error_waste_type"></div>
+          </div>
+
+          <div>
+            <label>Weight (kg)</label>
+            <input type="number" id="weight_kg" placeholder="Masukkan berat" />
+            <div class="error" id="error_weight_kg"></div>
+          </div>
+
+          <div>
+            <label>Status</label>
+            <select id="status">
+              <option value="Active">Active</option>
+              <option value="Archived">Archived</option>
+            </select>
+            <div class="error" id="error_status"></div>
+          </div>
+        </div>
+
+        <div class="full-width-button">
+          <button type="submit" class="btn-primary">Simpan Kontainer</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Search & Filter</h2>
+      <div class="filters">
+        <div>
+          <label>Filter Type</label>
+          <select id="filterType">
+            <option value="">Semua</option>
+            <option value="Chemical">Chemical</option>
+            <option value="Plastic">Plastic</option>
+            <option value="Metal">Metal</option>
+            <option value="Organic">Organic</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Min Weight</label>
+          <input type="number" id="minWeight" placeholder="Contoh: 500" />
+        </div>
+
+        <button type="button" class="btn-info" onclick="applyFilter()">Terapkan Filter</button>
+        <button type="button" class="btn-soft" onclick="loadContainers()">Reset</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">Daftar Kontainer</h2>
+    <div id="containerList" class="cards"></div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
