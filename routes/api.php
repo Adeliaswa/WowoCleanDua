@@ -1,13 +1,25 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ContainerController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GatewayController;
 
-Route::get('/containers', [ContainerController::class, 'index']);
-Route::get('/containers/search', [ContainerController::class, 'search']);
-Route::get('/containers/{id}', [ContainerController::class, 'show']);
-Route::get('/containers/{id}/logs', [ContainerController::class, 'logs']);
+Route::prefix('v1')->group(function () {
+    Route::post('/login',   [AuthController::class, 'login']);
+    Route::post('/logout',  [AuthController::class, 'logout'])->middleware('jwt.auth');
+    Route::get('/profile',  [AuthController::class, 'profile'])->middleware('jwt.auth');
+});
 
-Route::post('/containers', [ContainerController::class, 'store']);
-Route::patch('/containers/{id}/archive', [ContainerController::class, 'archive']);
-Route::delete('/containers/{id}', [ContainerController::class, 'destroy']);
+
+Route::prefix('v1/gateway')->middleware(['jwt.auth'])->group(function () {
+
+
+    Route::get('/containers',           [GatewayController::class, 'index']);
+    Route::get('/containers/{id}',      [GatewayController::class, 'show']);
+    Route::get('/containers/{id}/logs', [GatewayController::class, 'logs']);
+
+
+    Route::post('/containers',                    [GatewayController::class, 'store'])->middleware('role:admin');
+    Route::patch('/containers/{id}/archive',      [GatewayController::class, 'archive'])->middleware('role:admin');
+    Route::delete('/containers/{id}',             [GatewayController::class, 'destroy'])->middleware('role:admin');
+});

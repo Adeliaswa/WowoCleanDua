@@ -39,7 +39,11 @@ return [
 
     'guards' => [
         'web' => [
-            'driver' => 'session',
+            'driver'   => 'session',
+            'provider' => 'users',
+        ],
+        'api' => [
+            'driver'   => 'jwt',        // ← ubah dari 'token' ke 'jwt'
             'provider' => 'users',
         ],
     ],

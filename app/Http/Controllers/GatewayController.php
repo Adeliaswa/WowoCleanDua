@@ -6,13 +6,37 @@ use App\Models\Container;
 use App\Models\TrackingLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use OpenApi\Attributes as OA;
 
-class ContainerController extends Controller
+class GatewayController extends Controller
 {
-    public function index()
+    #[OA\Get(
+        path: "/api/v1/gateway/containers",
+        summary: "Ambil semua data kontainer via Gateway (admin & user)",
+        tags: ["Gateway - Containers"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "type", in: "query", required: false, schema: new OA\Schema(type: "string", example: "Chemical")),
+            new OA\Parameter(name: "min_weight", in: "query", required: false, schema: new OA\Schema(type: "number", example: 500)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Daftar kontainer berhasil diambil"),
+            new OA\Response(response: 401, description: "Unauthenticated"),
+        ]
+    )]
+    public function index(Request $request)
     {
-        $containers = Container::with('trackingLogs')->get();
-        return response()->json($containers, 200);
+        $query = Container::with('trackingLogs');
+
+        if ($request->filled('type')) {
+            $query->whereRaw('LOWER(waste_type) = ?', [strtolower($request->type)]);
+        }
+
+        if ($request->filled('min_weight')) {
+            $query->where('weight_kg', '>=', (float) $request->min_weight);
+        }
+
+        return response()->json($query->get(), 200);
     }
 
     public function show($id)
@@ -31,26 +55,34 @@ class ContainerController extends Controller
             return response()->json(['message' => 'Container not found'], 404);
         }
         return response()->json([
-            'container_id' => $container->container_id,
+            'container_id'  => $container->container_id,
             'tracking_logs' => $container->trackingLogs,
         ], 200);
     }
 
-    public function search(Request $request)
-    {
-        $query = Container::with('trackingLogs');
-
-        if ($request->filled('type')) {
-            $query->whereRaw('LOWER(waste_type) = ?', [strtolower($request->type)]);
-        }
-
-        if ($request->filled('min_weight')) {
-            $query->where('weight_kg', '>=', (float) $request->min_weight);
-        }
-
-        return response()->json($query->get(), 200);
-    }
-
+    #[OA\Post(
+        path: "/api/v1/gateway/containers",
+        summary: "Tambah kontainer baru via Gateway (admin only)",
+        tags: ["Gateway - Containers"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ["container_id", "waste_type", "weight_kg", "status"],
+                properties: [
+                    new OA\Property(property: "container_id", type: "string", example: "XY12345"),
+                    new OA\Property(property: "waste_type",   type: "string", example: "Chemical"),
+                    new OA\Property(property: "weight_kg",    type: "number", example: 500),
+                    new OA\Property(property: "status",       type: "string", example: "Active"),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "Kontainer berhasil dibuat"),
+            new OA\Response(response: 403, description: "Forbidden - bukan admin"),
+            new OA\Response(response: 422, description: "Validation error"),
+        ]
+    )]
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -73,13 +105,11 @@ class ContainerController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        // Cek unik container_id
         $exists = Container::whereRaw('UPPER(container_id) = ?', [strtoupper($request->container_id)])->exists();
         if ($exists) {
             return response()->json(['message' => 'Validation failed', 'errors' => ['container_id' => ['Container ID harus unik.']]], 422);
         }
 
-        // Conditional validation chemical
         if (strtolower($request->waste_type) === 'chemical' && $request->weight_kg > 1000) {
             return response()->json(['message' => 'Validation failed', 'errors' => ['weight_kg' => ['Untuk waste_type Chemical, weight_kg tidak boleh lebih dari 1000.']]], 422);
         }
@@ -95,7 +125,7 @@ class ContainerController extends Controller
             'container_id' => $container->id,
             'location'     => 'Initial Entry',
             'timestamp'    => now(),
-            'description'  => 'Container created via API',
+            'description'  => 'Container created via Gateway API',
         ]);
 
         return response()->json([
@@ -104,6 +134,20 @@ class ContainerController extends Controller
         ], 201);
     }
 
+    #[OA\Patch(
+        path: "/api/v1/gateway/containers/{id}/archive",
+        summary: "Arsipkan kontainer via Gateway (admin only)",
+        tags: ["Gateway - Containers"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Berhasil diarsipkan"),
+            new OA\Response(response: 403, description: "Forbidden"),
+            new OA\Response(response: 404, description: "Not found"),
+        ]
+    )]
     public function archive($id)
     {
         $container = Container::find($id);
@@ -118,12 +162,26 @@ class ContainerController extends Controller
             'container_id' => $container->id,
             'location'     => 'System Update',
             'timestamp'    => now(),
-            'description'  => 'Container archived',
+            'description'  => 'Container archived via Gateway',
         ]);
 
         return response()->json(['message' => 'Container archived successfully'], 200);
     }
 
+    #[OA\Delete(
+        path: "/api/v1/gateway/containers/{id}",
+        summary: "Hapus kontainer via Gateway (admin only)",
+        tags: ["Gateway - Containers"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer")),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Berhasil dihapus"),
+            new OA\Response(response: 403, description: "Forbidden"),
+            new OA\Response(response: 404, description: "Not found"),
+        ]
+    )]
     public function destroy($id)
     {
         $container = Container::find($id);
